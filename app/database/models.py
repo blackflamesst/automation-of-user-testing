@@ -20,13 +20,14 @@ class User(Base):
     age: Mapped[int] = mapped_column(nullable=True)
     username: Mapped[str] = mapped_column(String(30), nullable=True)
     count_true_answers: Mapped[int] = mapped_column(nullable=True)
+    selected_topic: Mapped[int] = mapped_column(nullable=True)
 
 class Topic(Base):
     __tablename__ = 'topics'
     
     id: Mapped[int] = mapped_column(primary_key=True)
     topic_name: Mapped[str] = mapped_column(String(50))
-    count_true_answers: Mapped[int] = mapped_column(nullable=True)
+    count_true_answers: Mapped[int] = mapped_column( )
     
 class Question(Base):
     __tablename__ = 'questions'
@@ -44,6 +45,14 @@ class Result(Base):
     user: Mapped[int] = mapped_column(ForeignKey('users.id'))
     topic: Mapped[int] = mapped_column(ForeignKey('topics.id'))
     result: Mapped[str] = mapped_column(String(5))
+
+class Answer(Base):
+    __tablename__ = 'answers'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
+    question_id: Mapped[int] = mapped_column(ForeignKey('questions.id'))
+    answer: Mapped[str] = mapped_column(String(1024), nullable=True)
 
 async def async_main():
     async with engine.begin() as conn:
