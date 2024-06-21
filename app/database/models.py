@@ -5,10 +5,10 @@ from typing import List
 
 engine = create_async_engine('sqlite+aiosqlite:///db.sqlite3', echo=True)
 
+async_session=async_sessionmaker(engine)
+
 class Base(AsyncAttrs, DeclarativeBase):
     pass
-
-async_session=async_sessionmaker(engine)
 
 class User(Base):
     __tablename__ = 'users'
@@ -19,7 +19,7 @@ class User(Base):
     group: Mapped[str] = mapped_column(String(10), nullable=True)
     age: Mapped[int] = mapped_column(nullable=True)
     username: Mapped[str] = mapped_column(String(30), nullable=True)
-    count_true_answers: Mapped[int] = mapped_column(nullable=True)
+    count_true_answers: Mapped[int] = mapped_column(default=0)
     selected_topic: Mapped[int] = mapped_column(nullable=True)
 
 class Topic(Base):
@@ -42,9 +42,9 @@ class Result(Base):
     __tablename__ = 'results'
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    user: Mapped[int] = mapped_column(ForeignKey('users.id'))
-    topic: Mapped[int] = mapped_column(ForeignKey('topics.id'))
-    result: Mapped[str] = mapped_column(String(5))
+    user: Mapped[BigInteger] = mapped_column(BigInteger)
+    topic: Mapped[int] = mapped_column(ForeignKey('topics.id'), nullable=True)
+    result: Mapped[int] = mapped_column(default=0, nullable=True)
 
 class Answer(Base):
     __tablename__ = 'answers'
@@ -53,6 +53,16 @@ class Answer(Base):
     topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
     question_id: Mapped[int] = mapped_column(ForeignKey('questions.id'))
     answer: Mapped[str] = mapped_column(String(1024), nullable=True)
+
+
+class Description(Base):
+    __tablename__ = 'descriptions'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    min_value: Mapped[int] = mapped_column()
+    max_value: Mapped[int] = mapped_column()
+    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
+    description: Mapped[str] = mapped_column(String(1024), nullable=True)
 
 async def async_main():
     async with engine.begin() as conn:

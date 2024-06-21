@@ -24,7 +24,8 @@ async def cmd_start(message: Message, state: FSMContext):
         await message.answer('Добро пожаловать\n\nВведите ваше имя')
         await state.set_state(Process.name)
     else:
-        await message.answer('Выберите какой тест хотите пройти', reply_markup=await all_topics())
+        await message.answer('Вам доступна команда /theme для выбора темы тестирования')
+        await message.answer('Вам доступна команда /res для просмотра своих результатов')
 
 @user.message(Process.name)
 async def get_name(message: Message, state: FSMContext):
@@ -48,11 +49,23 @@ async def choose_topic(message: Message, state: FSMContext):
                        user['age'],
                        message.from_user.username)
     await message.answer('Вы успешно зарегистрированы')
-    await message.answer('Вам доступна команда "/theme" для выбора темы тестирования')
-    await message.answer('Вам доступна команда "/res" для просмотра своих результатов')
-    await message.answer('Вы успешно зарегистрированы')
-    await message.answer('Выберите какой тест хотите пройти', reply_markup=await all_topics())
+    await message.answer('Вам доступна команда /theme для выбора темы тестирования')
+    await message.answer('Вам доступна команда /res для просмотра своих результатов')
     await state.clear()
+
+@user.message(Command('theme'))
+async def choosing_theme(message: Message):
+    await message.answer('Выберите какой тест хотите пройти', reply_markup=await all_topics())
+
+@user.message(Command('res'))
+async def choosing_theme(message: Message):
+    results = await rq.get_results_from_user(message.from_user.id)
+    if results:
+        for result in results:
+            description = await rq.get_description(result.result, result.topic)
+            await message.answer(description.description)
+    else:
+        await message.answer("Для получения результата необходимо пройти хотя бы один тест")
     
 @user.callback_query(F.data.startswith('topic_'))
 async def start_test(callback: CallbackQuery):
@@ -72,6 +85,7 @@ async def test(callback: CallbackQuery):
 
     if user_answer == correct_answer:
         await callback.answer("Правильный ответ!")
+        await rq.edit_result_on_user(callback.from_user.id)
     else:
         await callback.answer("Неправильный ответ.")
 
@@ -80,5 +94,9 @@ async def test(callback: CallbackQuery):
     if next_question:
         await callback.message.edit_text(next_question.text, reply_markup=await kb.answering(next_question.id))
     else:
-        await callback.message.delete()
-        await callback.message.answer("Тестирование завершено.")
+        user_res = await rq.get_last_result_from_user(callback.from_user.id)
+        description = await rq.get_description(user_res.count_true_answers, question.topic)
+        await rq.add_result(callback.from_user.id, question.topic, user_res.count_true_answers)
+        await callback.message.edit_text("Тестирование завершено.")
+        await callback.message.answer(description.description)
+        await rq.clear_topic_result(callback.from_user.id)

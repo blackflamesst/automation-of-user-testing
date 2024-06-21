@@ -18,6 +18,11 @@ class Admin(Filter):
     async def __call__(self, message: Message):
         return message.from_user.id in self.admins
     
+@admin.message(Admin(), Command('users'))
+async def get_users(message: Message):
+    await message.answer('Список зарегистрированных пользователей', reply_markup= await kb.all_users())
+
+
 @admin.message(Admin(), Command('results'))
 async def results(message: Message):
     await message.answer('Список всех результатов')
