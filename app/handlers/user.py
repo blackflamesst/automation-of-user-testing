@@ -25,13 +25,13 @@ async def cmd_start(message: Message, state: FSMContext):
         await state.set_state(Process.name)
     else:
         await message.answer('Вам доступна команда /theme для выбора темы тестирования')
-        await message.answer('Вам доступна команда /res для просмотра своих результатов')
+        await message.answer('Вам доступна команда /res для просмотра всех своих результатов')
 
 @user.message(Process.name)
 async def get_name(message: Message, state: FSMContext):
     await state.update_data(name=message.text)
     await state.set_state(Process.group)
-    await message.answer('Введите номер группы')
+    await message.answer('Введите номер группы (если вы не состоите в группе, отправьте "-")')
     
 @user.message(Process.group)
 async def get_group(message: Message, state: FSMContext):
@@ -50,7 +50,7 @@ async def choose_topic(message: Message, state: FSMContext):
                        message.from_user.username)
     await message.answer('Вы успешно зарегистрированы')
     await message.answer('Вам доступна команда /theme для выбора темы тестирования')
-    await message.answer('Вам доступна команда /res для просмотра своих результатов')
+    await message.answer('Вам доступна команда /res для просмотра всех своих результатов')
     await state.clear()
 
 @user.message(Command('theme'))
@@ -58,7 +58,7 @@ async def choosing_theme(message: Message):
     await message.answer('Выберите какой тест хотите пройти', reply_markup=await all_topics())
 
 @user.message(Command('res'))
-async def choosing_theme(message: Message):
+async def show_uwer_results(message: Message):
     results = await rq.get_results_from_user(message.from_user.id)
     if results:
         for result in results:
@@ -74,11 +74,11 @@ async def start_test(callback: CallbackQuery):
     question = questions[0]
     if question:
         await rq.edit_user_topic(callback.from_user.id, callback.data.split('_')[1])
-        await callback.message.edit_text(question.text, reply_markup=await kb.answering(question.id))
+        await callback.message.edit_text(question.text, reply_markup=await kb.answering(question.id, question.topic))
 
 @user.callback_query(F.data.startswith('answer:'))
 async def test(callback: CallbackQuery):
-    action, question_id, user_answer = callback.data.split(':')
+    action, question_id, user_answer, category, quality = callback.data.split(':')
 
     question = await rq.get_question(question_id)
     correct_answer = question.true
@@ -92,7 +92,7 @@ async def test(callback: CallbackQuery):
     next_question = await rq.get_next_question(question.topic, question_id)
 
     if next_question:
-        await callback.message.edit_text(next_question.text, reply_markup=await kb.answering(next_question.id))
+        await callback.message.edit_text(next_question.text, reply_markup=await kb.answering(next_question.id, question.topic))
     else:
         user_res = await rq.get_last_result_from_user(callback.from_user.id)
         description = await rq.get_description(user_res.count_true_answers, question.topic)

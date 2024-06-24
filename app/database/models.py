@@ -27,7 +27,7 @@ class Topic(Base):
     
     id: Mapped[int] = mapped_column(primary_key=True)
     topic_name: Mapped[str] = mapped_column(String(50))
-    count_true_answers: Mapped[int] = mapped_column( )
+    count_true_answers: Mapped[int] = mapped_column(nullable=True)
     
 class Question(Base):
     __tablename__ = 'questions'
@@ -35,28 +35,80 @@ class Question(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     text: Mapped[str] = mapped_column(String(1024))
     topic: Mapped[int] = mapped_column(ForeignKey('topics.id'))
-    true: Mapped[str] = mapped_column(String(5))
-    count: Mapped[int] = mapped_column(nullable=True)
+    true: Mapped[str] = mapped_column(String(5), nullable=True)
+    type: Mapped[str] = mapped_column(String(20), nullable=True)
+    is_reverse: Mapped[bool] = mapped_column(default=False)
+    quality: Mapped[int]=mapped_column(ForeignKey('qualities.id'), nullable=True)
 
 class Result(Base):
     __tablename__ = 'results'
     
     id: Mapped[int] = mapped_column(primary_key=True)
     user: Mapped[BigInteger] = mapped_column(BigInteger)
-    topic: Mapped[int] = mapped_column(ForeignKey('topics.id'), nullable=True)
-    result: Mapped[int] = mapped_column(default=0, nullable=True)
+    topic: Mapped[int] = mapped_column(ForeignKey('topics.id'))
+    result: Mapped[int] = mapped_column(default=0)
+    
+class Result_by_category(Base):
+    __tablename__ = 'results_by_category'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user: Mapped[BigInteger] = mapped_column(BigInteger)
+    category_id: Mapped[int] = mapped_column(ForeignKey('categories.id'))
+    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
+    result: Mapped[int] = mapped_column(default=0)
+    
+class Result_by_quality(Base):
+    __tablename__ = 'results_by_quality'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user: Mapped[BigInteger] = mapped_column(BigInteger)
+    quality_id: Mapped[int] = mapped_column(ForeignKey('qualities.id'))
+    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
+    result: Mapped[int] = mapped_column(default=0)
 
 class Answer(Base):
     __tablename__ = 'answers'
     
     id: Mapped[int] = mapped_column(primary_key=True)
-    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
     question_id: Mapped[int] = mapped_column(ForeignKey('questions.id'))
-    answer: Mapped[str] = mapped_column(String(1024), nullable=True)
-
+    answer_text: Mapped[str] = mapped_column(String(1024), nullable=True)
+    answer: Mapped[str] = mapped_column(String(5), nullable=True)
+    category: Mapped[int]=mapped_column(ForeignKey('categories.id'), nullable=True)
 
 class Description(Base):
     __tablename__ = 'descriptions'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    min_value: Mapped[int] = mapped_column()
+    max_value: Mapped[int] = mapped_column()
+    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
+    description: Mapped[str] = mapped_column(String(1024), nullable=True)
+
+class Category(Base):
+    __tablename__ = 'categories'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
+    description: Mapped[str] = mapped_column(String(20), nullable=True)
+    
+class Quality(Base):
+    __tablename__ = 'qualities'
+    
+    id: Mapped[int] = mapped_column(primary_key=True)
+    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
+    description: Mapped[str] = mapped_column(String(100), nullable=True)
+    
+class Description_of_Category(Base):
+    __tablename__ = 'description_of_categories'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    min_value: Mapped[int] = mapped_column()
+    max_value: Mapped[int] = mapped_column()
+    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
+    description: Mapped[str] = mapped_column(String(1024), nullable=True)
+
+class Description_of_Quality(Base):
+    __tablename__ = 'description_of_qualities'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     min_value: Mapped[int] = mapped_column()

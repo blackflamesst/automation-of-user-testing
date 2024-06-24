@@ -1,6 +1,8 @@
 from app.database.models import async_session
-from app.database.models import User, Topic, Question, Result, Answer, Description
-from sqlalchemy import select, update, delete
+from app.database.models import User, Topic, Question, Answer, Category, Quality
+from app.database.models import Description, Description_of_Category, Description_of_Quality
+from app.database.models import Result, Result_by_category, Result_by_quality
+from sqlalchemy import select, update
 
 async def add_user(tg_id):
     async with async_session() as session:
@@ -35,16 +37,35 @@ async def add_result(tg_id, topic_id, user_result):
         await session.execute(update(Result).where(Result.user == tg_id, 
                                                    Result.topic==topic_id).values(result=user_result))
         await session.commit()
+        
+async def add_result_by_category(tg_id, category_id, topic_id):
+    async with async_session() as session:
+        result = await session.scalar(select(Result_by_category).where(Result_by_category.user == tg_id, 
+                                                                       Result_by_category.topic_id==topic_id,
+                                                                       Result_by_category.category_id==category_id))
+        if not result:
+            session.add(Result(user=tg_id, topic=topic_id))
+        await session.execute(update(Result_by_category).where(Result_by_category.user == tg_id,
+                                                               Result_by_category.category_id==category_id, 
+                                                               Result_by_category.topic_id==topic_id).values(result=Result_by_category.result + 1))
+        await session.commit()
+        
+async def add_result_by_quality(tg_id, quality_id, topic_id):
+    async with async_session() as session:
+        result = await session.scalar(select(Result_by_quality).where(Result_by_quality.user == tg_id, 
+                                                                      Result_by_quality.topic_id==topic_id,
+                                                                      Result_by_quality.quality_id==quality_id))
+        if not result:
+            session.add(Result(user=tg_id, topic=topic_id))
+        await session.execute(update(Result_by_quality).where(Result_by_quality.user == tg_id, 
+                                                              Result_by_quality.topic_id==topic_id,
+                                                              Result_by_quality.quality_id==quality_id).values(result=Result_by_quality.result + 1))
+        await session.commit()
 
 async def clear_topic_result(tg_id):
     async with async_session() as session:
         await session.execute(update(User).where(User.tg_id == tg_id).values(selected_topic=0,
                                                                              count_true_answers = 0))
-        await session.commit()
-
-async def edit_result(user_id, topic_id, user_result):
-    async with async_session() as session:
-        await session.execute(update(Result).where(Result.user == user_id).values(topic = topic_id, result=user_result))
         await session.commit()
 
 async def edit_result_on_user(tg_id):
