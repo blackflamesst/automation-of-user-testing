@@ -13,7 +13,7 @@ class Answer(StatesGroup):
 
 class Admin(Filter):
     def __init__(self):
-        self.admins = [452091758]
+        self.admins = [452091758, 479964432]
     
     async def __call__(self, message: Message):
         return message.from_user.id in self.admins
