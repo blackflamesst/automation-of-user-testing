@@ -1,0 +1,1 @@
+aiogram, openai, aiohttp, aiosqlite, magic-filter, pytest, pytest-asyncio, pytest-mock, python-dotenv, SQLAlchemy

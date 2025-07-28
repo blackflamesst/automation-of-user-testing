@@ -1,14 +1,19 @@
-from sqlalchemy import ForeignKey, String, BigInteger
+from sqlalchemy import ForeignKey, String, BigInteger, Enum as SQLEnum, Boolean
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncAttrs, async_sessionmaker
 from typing import List
+import enum
 
 engine = create_async_engine('sqlite+aiosqlite:///db.sqlite3', echo=True)
-
 async_session=async_sessionmaker(engine)
 
 class Base(AsyncAttrs, DeclarativeBase):
     pass
+
+class Role(enum.Enum):
+    STUDENT = "student"
+    TEACHER = "teacher"
+    ADMIN = "admin"
 
 class User(Base):
     __tablename__ = 'users'
@@ -19,16 +24,31 @@ class User(Base):
     group: Mapped[str] = mapped_column(String(10), nullable=True)
     age: Mapped[int] = mapped_column(nullable=True)
     username: Mapped[str] = mapped_column(String(30), nullable=True)
+    city: Mapped[str] = mapped_column(String(20), nullable=True)
+    univercity: Mapped[str] = mapped_column(String(30), nullable=True)
+    institute: Mapped[str] = mapped_column(String(50), nullable=True)
+    department: Mapped[str] = mapped_column(String(50), nullable=True)
+    stream: Mapped[str] = mapped_column(String(50), nullable=True)
     count_true_answers: Mapped[int] = mapped_column(default=0)
     selected_topic: Mapped[int] = mapped_column(nullable=True)
+    role: Mapped[Role] = mapped_column(SQLEnum(Role), default=Role.STUDENT)
 
 class Topic(Base):
     __tablename__ = 'topics'
     
     id: Mapped[int] = mapped_column(primary_key=True)
     topic_name: Mapped[str] = mapped_column(String(50))
-    count_true_answers: Mapped[int] = mapped_column(nullable=True)
+    questions_count: Mapped[int] = mapped_column(nullable=True)
+    topic_creator: Mapped[BigInteger] = mapped_column(ForeignKey('users.tg_id'), nullable=True)
     
+class TopicAccess(Base):
+    __tablename__ = 'topic_access'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
+    access_type: Mapped[str] = mapped_column(String(20))
+    access_value: Mapped[str] = mapped_column(String(100), nullable=True)    
+
 class Question(Base):
     __tablename__ = 'questions'
     
@@ -53,18 +73,18 @@ class Result_by_category(Base):
     
     id: Mapped[int] = mapped_column(primary_key=True)
     user: Mapped[BigInteger] = mapped_column(BigInteger)
-    category_id: Mapped[int] = mapped_column(ForeignKey('categories.id'))
-    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
-    result: Mapped[int] = mapped_column(default=0)
+    category_id: Mapped[int] = mapped_column(ForeignKey('categories.id'), nullable=True)
+    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'), nullable=True)
+    result: Mapped[int] = mapped_column(default=0, nullable=True)
     
 class Result_by_quality(Base):
     __tablename__ = 'results_by_quality'
     
     id: Mapped[int] = mapped_column(primary_key=True)
     user: Mapped[BigInteger] = mapped_column(BigInteger)
-    quality_id: Mapped[int] = mapped_column(ForeignKey('qualities.id'))
-    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
-    result: Mapped[int] = mapped_column(default=0)
+    quality_id: Mapped[int] = mapped_column(ForeignKey('qualities.id'), nullable=True)
+    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'), nullable=True)
+    result: Mapped[int] = mapped_column(default=0, nullable=True)
 
 class Answer(Base):
     __tablename__ = 'answers'
@@ -98,21 +118,13 @@ class Quality(Base):
     topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
     description: Mapped[str] = mapped_column(String(100), nullable=True)
     
-class Description_of_Category(Base):
-    __tablename__ = 'description_of_categories'
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    min_value: Mapped[int] = mapped_column()
-    max_value: Mapped[int] = mapped_column()
-    topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
-    description: Mapped[str] = mapped_column(String(1024), nullable=True)
-
 class Description_of_Quality(Base):
     __tablename__ = 'description_of_qualities'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     min_value: Mapped[int] = mapped_column()
     max_value: Mapped[int] = mapped_column()
+    quality_id: Mapped[int] = mapped_column(ForeignKey('qualities.id'), nullable=True)
     topic_id: Mapped[int] = mapped_column(ForeignKey('topics.id'))
     description: Mapped[str] = mapped_column(String(1024), nullable=True)
 
